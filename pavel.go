@@ -13,12 +13,12 @@ import (
 var (
 	app = kingpin.New("pavel", "A command-line tool to consume or produce Kafka messages.")
 
-	importCommand = app.Command("import", "Send file contents as line by line messages to kafka.")
+	importCommand = app.Command("produce", "Send file contents as line by line messages to kafka.")
 	importBroker  = importCommand.Arg("broker", "Kafka broker to connect to.").Required().String()
 	importTopic   = importCommand.Arg("topic", "Kafka topic.").Required().String()
 	importFile    = importCommand.Arg("file", "File to import.").Required().String()
 
-	exportCommand = app.Command("export", "Read messages from a Kafka topic.")
+	exportCommand = app.Command("consume", "Read messages from a Kafka topic.")
 	exportListen  = exportCommand.Flag("listen", "Continuously listen to kafka topic").Default("false").Bool()
 	exportOffset  = exportCommand.Flag("offset", "Offset to start from").Default("earliest").String()
 	exportBroker  = exportCommand.Arg("broker", "Kafka broker to connect to.").Required().String()
@@ -32,18 +32,8 @@ func main() {
 		importToKafka(*importBroker, *importTopic, *importFile)
 
 	case exportCommand.FullCommand():
-		fmt.Printf("EXPORT: %s %s %s %d", *exportBroker, *exportTopic, *exportFile, *exportListen)
 		exportFromKafka(*exportBroker, *exportTopic, *exportFile, *exportListen, *exportOffset)
 	}
-}
-
-func printHelp() {
-	fmt.Printf("Usage:\n")
-	fmt.Printf("  %s import <broker> <topic> <file>\n", os.Args[0])
-	fmt.Printf("      read <file> line by line and insert into <topic> on kafka <broker>\n")
-	fmt.Println()
-	fmt.Printf("  %s export <broker> <topic> [file]\n", os.Args[0])
-	fmt.Printf("      consume messages in <topic> and write them to [file] or stdout if no file is specified\n")
 }
 
 func importToKafka(broker string, topic string, input string) {
@@ -102,7 +92,7 @@ func exportFromKafka(broker string, topic string, outputFileName string, listen 
 	if listen {
 		fmt.Fprintf(os.Stderr, "Listening to %s/%s\n", broker, topic)
 	} else {
-		fmt.Fprintf(os.Stderr, "Exporting from %s/%s\n", broker, topic)
+		fmt.Fprintf(os.Stderr, "Consuming messages from %s/%s\n", broker, topic)
 	}
 
 	f, err := os.OpenFile(outputFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
